@@ -15,22 +15,26 @@ import storyRoutes from "./routes/stories.js";
 import relationshipRoutes from "./routes/relationships.js";
 import http from "http"; // Import HTTP module
 import { Server } from "socket.io"; // Import Server class from socket.io
+import dotenv from "dotenv";
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app); // Create HTTP server
 // const io = new Server(server); // Create Socket.IO server instance
 
+const CLIENT_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:3000,https://link-up-sage.vercel.app")
+  .split(",")
+  .map((s) => s.trim());
+
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:3000", "https://link-up-sage.vercel.app"],
-    // credentials: true,
+    origin: CLIENT_ORIGINS,
+    credentials: true,
   },
 });
 
 // Connect to MongoDB
-mongoose.connect(
-  "mongodb+srv://dabiduh:loco157@projectfinal.5crqbft.mongodb.net/socialappconnection?retryWrites=true&w=majority&appName=projectfinal"
-);
+mongoose.connect(process.env.MONGODB_URI);
 
 const db = mongoose.connection;
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
@@ -43,14 +47,22 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Credentials", true);
   next();
 });
-app.use(express.json({ limit: "3mb" }));
-app.use(cors({ origin: true }));
+const JSON_LIMIT = process.env.JSON_LIMIT || "3mb";
+app.use(express.json({ limit: JSON_LIMIT }));
+app.use(
+  cors({
+    origin: CLIENT_ORIGINS,
+    credentials: true,
+  })
+);
 app.use(cookieParser());
 
 //storing
+const UPLOAD_DIR = process.env.UPLOAD_DIR || "../client/public/upload";
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "../client/public/upload");
+    cb(null, UPLOAD_DIR);
   },
   filename: function (req, file, cb) {
     // Use the original filename provided in FormData
@@ -81,7 +93,7 @@ app.use("/api/relationships", relationshipRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/message", messageRoutes);
 
-const PORT = 8800;
+const PORT = process.env.PORT || 8800;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
