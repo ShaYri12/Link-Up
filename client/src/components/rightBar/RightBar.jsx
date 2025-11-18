@@ -103,7 +103,11 @@ const RightBar = () => {
                     <img
                       className="img-fluid"
                       src={
-                        user.profilePic ? `${BASE_URL}/upload/${user.profilePic}` : Avatar
+                        user.profilePic
+                          ? (/^https?:\/\//.test(user.profilePic)
+                              ? user.profilePic
+                              : `${BASE_URL}/upload/${user.profilePic}`)
+                          : Avatar
                       }
                       alt={user.username}
                     />
@@ -151,7 +155,9 @@ const RightBar = () => {
                       className="img-fluid"
                       src={
                         friend.profilePic
-                          ? `${BASE_URL}/upload/${friend.profilePic}`
+                          ? (/^https?:\/\//.test(friend.profilePic)
+                              ? friend.profilePic
+                              : `${BASE_URL}/upload/${friend.profilePic}`)
                           : Avatar
                       }
                       alt={friend.username}
