@@ -16,6 +16,7 @@ import relationshipRoutes from "./routes/relationships.js";
 import http from "http"; // Import HTTP module
 import { Server } from "socket.io"; // Import Server class from socket.io
 import dotenv from "dotenv";
+import { v2 as cloudinary } from "cloudinary";
 dotenv.config();
 
 const app = express();
@@ -75,33 +76,44 @@ app.use(
 );
 app.use(cookieParser());
 
-//storing
-const UPLOAD_DIR = process.env.UPLOAD_DIR || "../client/public/upload";
-
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: function (req, file, cb) {
-    // Use the original filename provided in FormData
-    cb(null, file.originalname);
-  },
+// Cloudinary configuration
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const upload = multer({
-  storage: storage,
-  limits: {
-    fieldSize: 534773760, // ~510 MB in bytes
-  },
-});
+// Multer in-memory storage for streaming to Cloudinary
+const upload = multer({ storage: multer.memoryStorage() });
 
-app.post("/api/upload", upload.single("file"), (req, res) => {
+app.post("/api/upload", upload.single("file"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
-    console.log("uploading", req.file.filename);
-    res.status(200).json(req.file.filename);
+
+    // Upload buffer to Cloudinary
+    const folder = process.env.CLOUDINARY_FOLDER || "link-up";
+    const isVideo = /video\//.test(req.file.mimetype);
+
+    const result = await cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: isVideo ? "video" : "image",
+      },
+      (error, uploadResult) => {
+        if (error) {
+          console.error("Cloudinary upload error:", error);
+          return res.status(500).json({ error: "Upload failed" });
+        }
+        // Return the secure URL to client
+        return res.status(200).json(uploadResult.secure_url);
+      }
+    );
+
+    // Write the buffer to the upload stream
+    const stream = result;
+    stream.end(req.file.buffer);
   } catch (e) {
     console.error("Upload error:", e);
     res.status(500).json({ error: "Upload failed" });

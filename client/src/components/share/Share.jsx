@@ -28,16 +28,17 @@ const Share = () => {
           const progress = Math.round(
             (progressEvent.loaded * 100) / progressEvent.total
           );
-          setUploadProgress(progress); // Update upload progress
+          setUploadProgress(progress);
         },
-        timeout: 3600000, // Set timeout to 60 seconds (adjust as needed)
+        timeout: 3600000,
       };
 
+      // backend now returns a Cloudinary secure_url
       const res = await makeRequest.post("/upload", formData, config);
-      return res.data;
+      return res.data; // secure url
     } catch (err) {
       console.error(err);
-      throw err; // Propagate error to the caller
+      throw err;
     }
   };
 
@@ -78,15 +79,14 @@ const Share = () => {
     setUploading(true);
     if (file) {
       const timestamp = Date.now();
-      const extension = file.name.split(".").pop();
       const fileName = `file_${timestamp}_${file.name}`;
-      console.log(fileName);
 
-      mutation.mutate({ desc, img: fileName });
-      if (file) await upload(fileName);
+      // First upload to Cloudinary and get a URL, then create the post with the URL
+      const url = await upload(fileName);
+      mutation.mutate({ desc, img: url });
       setDesc("");
       setFile(null);
-      setUploadProgress(0); // Reset upload progress
+      setUploadProgress(0);
     } else {
       mutation.mutate({ desc, img: "" });
       setDesc("");
@@ -101,7 +101,7 @@ const Share = () => {
         <div className="top d-flex">
           <div className="left">
             {currentUser.profilePic ? (
-              <img src={"/upload/" + currentUser.profilePic} alt="" />
+              <img src={currentUser.profilePic} alt="" />
             ) : (
               <img src={Avatar} alt="Default Avatar" />
             )}

@@ -72,7 +72,7 @@ const Post = ({ post }) => {
         <div className="user">
           <div className="userInfo">
             {post.userId.profilePic ? (
-              <img src={"/upload/" + post.userId.profilePic} alt="" />
+              <img src={post.userId.profilePic} alt="" />
             ) : (
               <img src={Avatar} alt="Default Avatar" />
             )}
@@ -97,10 +97,10 @@ const Post = ({ post }) => {
           <p>{post.desc}</p>
           {post.img && isVideo(post.img) ? (
             <video className="media" controls>
-              <source src={"/upload/" + post.img} type={`video/${post.img.split('.').pop()}`} />
+              <source src={post.img} type={`video/${post.img.split('.').pop()}`} />
             </video>
           ) : (
-            <img className="media" src={"/upload/" + post.img} alt="" />
+            post.img ? <img className="media" src={post.img} alt="" /> : null
           )}
         </div>
         <div className="info">
