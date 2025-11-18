@@ -24,7 +24,9 @@ const RightBar = () => {
         if (response.status !== 200) {
           throw new Error("Failed to fetch online friends");
         }
-        setOnlineFriends(response.data);
+        const raw = response.data;
+        const list = Array.isArray(raw) ? raw : Array.isArray(raw?.users) ? raw.users : [];
+        setOnlineFriends(list);
         setOnlineFriendsLoading(false);
       } catch (error) {
         console.error(error);
@@ -44,10 +46,10 @@ const RightBar = () => {
           throw new Error("Failed to fetch suggested users");
         }
 
+        const raw = response.data;
+        const candidates = Array.isArray(raw) ? raw : Array.isArray(raw?.users) ? raw.users : [];
         // Filter out the current user from suggested users
-        const filteredUsers = response?.data?.filter(
-          (user) => user._id !== currentUser._id
-        );
+        const filteredUsers = candidates.filter((user) => user?._id !== currentUser?._id);
 
         setSuggestedUsers(filteredUsers);
         setLoading(false);
@@ -59,7 +61,7 @@ const RightBar = () => {
     };
 
     fetchSuggestedUsers();
-  }, [currentUser.id]);
+  }, [currentUser?._id]);
 
   const handleFollow = async (followerId) => {
     try {
@@ -140,9 +142,9 @@ const RightBar = () => {
             )}
             {!onlineFriendsLoading &&
             !onlineFriendsError &&
-            onlineFriends &&
-            onlineFriends?.length > 0 ? (
-              onlineFriends?.map((friend) => (
+            Array.isArray(onlineFriends) &&
+            onlineFriends.length > 0 ? (
+              onlineFriends.map((friend) => (
                 <div className="user" key={friend._id}>
                   <Link to={`/profile/${friend._id}`} className="userInfo">
                     <img
