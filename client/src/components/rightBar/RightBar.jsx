@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import CloseIcon from "@mui/icons-material/Close";
 import { useContext, useEffect, useState } from "react";
-import { makeRequest } from "../../axios";
+import { makeRequest, BASE_URL } from "../../axios";
 import Avatar from "../../assets/avatar.jpg";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/authContext";
@@ -103,7 +103,7 @@ const RightBar = () => {
                     <img
                       className="img-fluid"
                       src={
-                        user.profilePic ? "/upload/" + user.profilePic : Avatar
+                        user.profilePic ? `${BASE_URL}/upload/${user.profilePic}` : Avatar
                       }
                       alt={user.username}
                     />
@@ -151,7 +151,7 @@ const RightBar = () => {
                       className="img-fluid"
                       src={
                         friend.profilePic
-                          ? "/upload/" + friend.profilePic
+                          ? `${BASE_URL}/upload/${friend.profilePic}`
                           : Avatar
                       }
                       alt={friend.username}
