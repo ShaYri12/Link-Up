@@ -5,7 +5,10 @@ import { makeRequest } from "../../axios";
 
 const Posts = ({ userId }) => {
   const { isLoading, error, data } = useQuery(["posts", userId], () =>
-    makeRequest.get(`/posts?userId=${userId ?? ""}`).then((res) => {
+    (userId
+      ? makeRequest.get(`/posts?userId=${userId}`)
+      : makeRequest.get(`/posts`)
+    ).then((res) => {
       const raw = res.data;
       if (Array.isArray(raw)) return raw;
       if (Array.isArray(raw?.posts)) return raw.posts;

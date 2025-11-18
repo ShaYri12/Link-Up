@@ -85,7 +85,7 @@ const Stories = () => {
           groupedStories[story.userId] = [];
         }
         groupedStories[story.userId].push({
-          url: "/upload/" + story.img,
+          url: story.img,
           name: story.name,
           userId: story.userId,
           storyId: story._id,
@@ -191,11 +191,7 @@ const Stories = () => {
       <div className="stories">
         <div className="my-story">
           <label htmlFor="fileInput" className="story">
-            {currentUser.profilePic ? (
-              <img src={"/upload/" + currentUser.profilePic} alt="" />
-            ) : (
-              <img src={Avatar} alt="Default Avatar" />
-            )}
+            <img src={currentUser.profilePic || Avatar} alt="" />
             <span>{currentUser.name}</span>
             {file ? ( // Render "upload" text if file is selected
               <button
