@@ -73,13 +73,21 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fieldSize: "510mb",
+    fieldSize: 534773760, // ~510 MB in bytes
   },
 });
 
 app.post("/api/upload", upload.single("file"), (req, res) => {
-  console.log("uploading");
-  res.status(200).json(req.file.filename);
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file uploaded" });
+    }
+    console.log("uploading", req.file.filename);
+    res.status(200).json(req.file.filename);
+  } catch (e) {
+    console.error("Upload error:", e);
+    res.status(500).json({ error: "Upload failed" });
+  }
 });
 
 app.use("/api/auth", authRoutes);

@@ -56,11 +56,9 @@ export const login = async (req, res) => {
     res
       .cookie("accessToken", token, {
         httpOnly: true,
-        // Set maxAge to a value in milliseconds to specify the cookie's expiration time
-        maxAge: 7 * 24 * 60 * 60 * 1000, // Example: 7 days
-        // You can also set other cookie attributes as needed
-        // secure: true, // Uncomment this line if using HTTPS
-        // sameSite: "none", // Uncomment this line if cross-origin requests need to send cookies
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        secure: true, // required for cross-site cookies over HTTPS
+        sameSite: "none", // allow cookies to be sent in cross-site requests
       })
       .status(200)
       .json(others);
@@ -73,6 +71,7 @@ export const login = async (req, res) => {
 export const logout = (req, res) => {
   res
     .clearCookie("accessToken", {
+      httpOnly: true,
       secure: true,
       sameSite: "none",
     })

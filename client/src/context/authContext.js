@@ -17,9 +17,17 @@ export const AuthContextProvider = ({ children }) => {
     setCurrentUser(res.data);
   };
 
-  const logout = () => {
-    localStorage.removeItem("user");
-    setCurrentUser(null);
+  const logout = async () => {
+    try {
+      await axios.post(`${BASE_URL}/auth/logout`, {}, { withCredentials: true });
+    } catch (e) {
+      // ignore network errors on logout
+    } finally {
+      localStorage.removeItem("user");
+      setCurrentUser(null);
+      // force redirect to login
+      window.location.replace("/login");
+    }
   };
 
   useEffect(() => {

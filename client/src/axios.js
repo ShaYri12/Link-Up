@@ -1,12 +1,15 @@
 import axios from "axios";
 
-const API_BASE =
+const RAW_API_BASE =
   process.env.REACT_APP_API_BASE_URL ||
   process.env.REACT_APP_API_URL ||
-  "https://linkupbackend.vercel.app//api";
+  "https://linkupbackend.vercel.app/api";
+
+// Normalize to ensure exactly one trailing slash
+const API_BASE = RAW_API_BASE.replace(/\/+$/, "");
 
 export const makeRequest = axios.create({
-  baseURL: API_BASE.endsWith("/") ? API_BASE : `${API_BASE}/`,
+  baseURL: `${API_BASE}/`,
   withCredentials: true,
   timeout: 600000,
 });
