@@ -298,7 +298,7 @@ const Navbar = () => {
                     >
                       {currentUser?.profilePic ? (
                         <img
-                          src={"/upload/" + currentUser?.profilePic}
+                          src={currentUser?.profilePic}
                           className="profileimg img-fluid rounded-circle"
                           alt=""
                         />

@@ -24,30 +24,10 @@ const server = http.createServer(app); // Create HTTP server
 // trust proxy so secure cookies work behind proxies (e.g., Vercel)
 app.set("trust proxy", 1);
 
-const CLIENT_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:3000,https://link-up-sage.vercel.app,https://linkup-lemon.vercel.app")
-  .split(",")
-  .map((s) => s.trim());
-
-const corsOrigin = (origin, callback) => {
-  // allow requests with no origin (like mobile apps or curl)
-  if (!origin) return callback(null, true);
-  try {
-    const url = new URL(origin);
-    const host = url.hostname;
-    if (CLIENT_ORIGINS.includes(origin)) return callback(null, true);
-    // allow any vercel.app subdomain
-    if (/\.vercel\.app$/.test(host)) return callback(null, true);
-    // allow localhost dev
-    if (host === "localhost") return callback(null, true);
-  } catch (e) {
-    // fallthrough
-  }
-  return callback(new Error("CORS not allowed for origin: " + origin), false);
-};
-
+// Permissive CORS: reflect request origin so credentials work across subdomains
 const io = new Server(server, {
   cors: {
-    origin: corsOrigin,
+    origin: (origin, callback) => callback(null, true),
     credentials: true,
   },
 });
@@ -63,19 +43,32 @@ db.once("open", () => {
 
 //middlewares
 app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Credentials", true);
+  const origin = req.headers.origin;
+  if (origin) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Vary", "Origin");
+  }
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
+  );
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+  );
+  if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
+
 const JSON_LIMIT = process.env.JSON_LIMIT || "3mb";
 app.use(express.json({ limit: JSON_LIMIT }));
 app.use(
   cors({
-    origin: corsOrigin,
+    origin: (origin, callback) => callback(null, true),
     credentials: true,
   })
 );
-// Explicitly handle preflight requests for all routes
-app.options("*", cors({ origin: corsOrigin, credentials: true }));
 app.use(cookieParser());
 
 // Cloudinary configuration
