@@ -49,7 +49,13 @@ const LeftBar = () => {
                 >
                   <div className="user">
                     {currentUser.profilePic ? (
-                      <img src={/^https?:\/\//.test(currentUser.profilePic) ? currentUser.profilePic : `${BASE_URL}/upload/${currentUser.profilePic}`} alt="" />
+                      <img src={
+                        /^https?:\/\//.test(currentUser.profilePic)
+                          ? currentUser.profilePic
+                          : (currentUser.profilePic.startsWith("/upload/") || currentUser.profilePic.startsWith("upload/"))
+                            ? (currentUser.profilePic.startsWith("/") ? currentUser.profilePic : `/${currentUser.profilePic}`)
+                            : `/upload/${currentUser.profilePic}`
+                      } alt="" />
                     ) : (
                       <img src={Avatar} alt="Default Avatar" />
                     )}

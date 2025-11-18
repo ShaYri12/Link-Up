@@ -3,7 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import CloseIcon from "@mui/icons-material/Close";
 import { useContext, useEffect, useState } from "react";
-import { makeRequest, BASE_URL } from "../../axios";
+import { makeRequest } from "../../axios";
 import Avatar from "../../assets/avatar.jpg";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/authContext";
@@ -106,7 +106,9 @@ const RightBar = () => {
                         user.profilePic
                           ? (/^https?:\/\//.test(user.profilePic)
                               ? user.profilePic
-                              : `${BASE_URL}/upload/${user.profilePic}`)
+                              : (user.profilePic.startsWith("/upload/") || user.profilePic.startsWith("upload/"))
+                                ? (user.profilePic.startsWith("/") ? user.profilePic : `/${user.profilePic}`)
+                                : `/upload/${user.profilePic}`)
                           : Avatar
                       }
                       alt={user.username}
@@ -157,7 +159,9 @@ const RightBar = () => {
                         friend.profilePic
                           ? (/^https?:\/\//.test(friend.profilePic)
                               ? friend.profilePic
-                              : `${BASE_URL}/upload/${friend.profilePic}`)
+                              : (friend.profilePic.startsWith("/upload/") || friend.profilePic.startsWith("upload/"))
+                                ? (friend.profilePic.startsWith("/") ? friend.profilePic : `/${friend.profilePic}`)
+                                : `/upload/${friend.profilePic}`)
                           : Avatar
                       }
                       alt={friend.username}
