@@ -20,15 +20,33 @@ dotenv.config();
 
 const app = express();
 const server = http.createServer(app); // Create HTTP server
-// const io = new Server(server); // Create Socket.IO server instance
+// trust proxy so secure cookies work behind proxies (e.g., Vercel)
+app.set("trust proxy", 1);
 
-const CLIENT_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:3000,https://link-up-sage.vercel.app")
+const CLIENT_ORIGINS = (process.env.CORS_ORIGINS || "http://localhost:3000,https://link-up-sage.vercel.app,https://linkup-lemon.vercel.app")
   .split(",")
   .map((s) => s.trim());
 
+const corsOrigin = (origin, callback) => {
+  // allow requests with no origin (like mobile apps or curl)
+  if (!origin) return callback(null, true);
+  try {
+    const url = new URL(origin);
+    const host = url.hostname;
+    if (CLIENT_ORIGINS.includes(origin)) return callback(null, true);
+    // allow any vercel.app subdomain
+    if (/\.vercel\.app$/.test(host)) return callback(null, true);
+    // allow localhost dev
+    if (host === "localhost") return callback(null, true);
+  } catch (e) {
+    // fallthrough
+  }
+  return callback(new Error("CORS not allowed for origin: " + origin), false);
+};
+
 const io = new Server(server, {
   cors: {
-    origin: CLIENT_ORIGINS,
+    origin: corsOrigin,
     credentials: true,
   },
 });
@@ -51,7 +69,7 @@ const JSON_LIMIT = process.env.JSON_LIMIT || "3mb";
 app.use(express.json({ limit: JSON_LIMIT }));
 app.use(
   cors({
-    origin: CLIENT_ORIGINS,
+    origin: corsOrigin,
     credentials: true,
   })
 );

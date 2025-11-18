@@ -27,13 +27,15 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      console.log("Online status updated successfully");
-      toast.success("Logout Successfully!");
-      await makeRequest.put(`/users/online`, { online: false });
-      logout();
-      navigate("/login");
+      // ensure we update online status before logging out
+      await makeRequest.put("users/online", { online: false });
     } catch (error) {
+      // If unauthorized or network error, proceed with logout anyway
       console.error("Error updating online status:", error);
+    } finally {
+      await logout();
+      toast.success("Logout Successfully!");
+      // AuthContext.logout will redirect to /login
     }
   };
 
