@@ -42,10 +42,12 @@
 
             .name {
               font-weight: 500;
+              color: themed("textColorSoft");
             }
 
             .date {
               font-size: 12px;
+              color: themed("textColorSoft");
 
               @media screen and (max-width:481px){
                 font-size: 10px;

@@ -194,7 +194,7 @@ const Navbar = () => {
                 </li> */}
                 <li
                   className={`position-relative nav-item mx-auto mx-md-2 my-auto search mb-3 mb-md-0 ${
-                    darkMode ? "border-light" : ""
+                    darkMode ? "border-gray-300" : ""
                   }`}
                 >
                   {isSearchVisible ? (
