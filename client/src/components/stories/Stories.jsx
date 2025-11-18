@@ -68,13 +68,19 @@ const Stories = () => {
   };
 
   const { isLoading, error, data } = useQuery(["stories"], () =>
-    makeRequest.get("/stories").then((res) => res.data)
+    makeRequest.get("/stories").then((res) => {
+      const raw = res.data;
+      if (Array.isArray(raw)) return raw;
+      if (Array.isArray(raw?.stories)) return raw.stories;
+      return [];
+    })
   );
 
   useEffect(() => {
-    if (data && data?.length > 0) {
+    if (Array.isArray(data) && data.length > 0) {
       const groupedStories = {};
-      data?.forEach((story) => {
+      for (const story of data) {
+        if (!story || !story.userId) continue;
         if (!(story.userId in groupedStories)) {
           groupedStories[story.userId] = [];
         }
@@ -84,8 +90,10 @@ const Stories = () => {
           userId: story.userId,
           storyId: story._id,
         });
-      });
+      }
       setStories(groupedStories);
+    } else {
+      setStories({});
     }
   }, [data]);
 
@@ -232,9 +240,9 @@ const Stories = () => {
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal-content">
-            {stories[currentUserId] &&
-              stories[currentUserId][currentStoryIndex].userId ===
-                currentUser._id && (
+            {Array.isArray(stories[currentUserId]) &&
+              stories[currentUserId][currentStoryIndex]?.userId ===
+                currentUser?._id && (
                 <button
                   className="story-delete btn btn-danger"
                   onClick={() =>
@@ -246,18 +254,20 @@ const Stories = () => {
                   <DeleteOutlinedIcon />
                 </button>
               )}
-            <Story
-              stories={stories[currentUserId]}
-              currentIndex={currentStoryIndex}
-              width="100%"
-              height="100vh"
-              onAllStoriesEnd={handleCloseModal}
-              onStoryEnd={handleNextStory}
-              onPreviousStory={handlePreviousStory}
-              onNext={handleNextStory}
-              onPrevious={handlePreviousStory}
-              onClose={handleCloseModal}
-            />
+            {Array.isArray(stories[currentUserId]) && (
+              <Story
+                stories={stories[currentUserId]}
+                currentIndex={currentStoryIndex}
+                width="100%"
+                height="100vh"
+                onAllStoriesEnd={handleCloseModal}
+                onStoryEnd={handleNextStory}
+                onPreviousStory={handlePreviousStory}
+                onNext={handleNextStory}
+                onPrevious={handlePreviousStory}
+                onClose={handleCloseModal}
+              />
+            )}
           </div>
         </div>
       )}
