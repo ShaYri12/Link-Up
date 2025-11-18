@@ -74,6 +74,8 @@ app.use(
     credentials: true,
   })
 );
+// Explicitly handle preflight requests for all routes
+app.options("*", cors({ origin: corsOrigin, credentials: true }));
 app.use(cookieParser());
 
 // Cloudinary configuration

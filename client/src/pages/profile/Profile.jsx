@@ -103,14 +103,12 @@ const Profile = () => {
         <>
           <div className="images">
             <img
-              src={userData.coverPic ? "/upload/" + userData.coverPic : Cover}
+              src={userData.coverPic || Cover}
               alt=""
               className="cover"
             />
             <img
-              src={
-                userData.profilePic ? "/upload/" + userData.profilePic : Avatar
-              }
+              src={userData.profilePic || Avatar}
               alt=""
               className="profilePic shadow"
             />
