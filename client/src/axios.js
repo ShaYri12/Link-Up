@@ -1,8 +1,8 @@
 import axios from "axios";
 
 const RAW_API_BASE =
-  process.env.REACT_APP_API_BASE_URL ||
-  process.env.REACT_APP_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
   "https://linkupbackend.vercel.app/api";
 
 // Normalize to ensure exactly one trailing slash

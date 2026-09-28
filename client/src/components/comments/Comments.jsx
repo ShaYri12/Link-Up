@@ -36,14 +36,20 @@ const Comments = ({ postId }) => {
     setDesc("");
   };
 
+  // Helper function to get the correct image path
+  const getImagePath = (pic) => {
+    if (!pic) return Avatar;
+    if (/^https?:\/\//.test(pic)) return pic;
+    if (pic.startsWith("/upload/") || pic.startsWith("upload/")) {
+      return pic.startsWith("/") ? pic : `/${pic}`;
+    }
+    return `/upload/${pic}`;
+  };
+
   return (
     <div className="comments">
       <div className="write">
-        {currentUser.profilePic ? (
-          <img src={"/upload/" + currentUser.profilePic} alt="" />
-        ) : (
-          <img src={Avatar} alt="Default Avatar" />
-        )}
+        <img src={getImagePath(currentUser.profilePic)} alt={currentUser.name || "Profile"} />
         <input
           type="text"
           placeholder="write a comment"
@@ -58,11 +64,7 @@ const Comments = ({ postId }) => {
         ? "loading"
         : data.map((comment) => (
             <div className="comment" key={comment._id}>
-              {comment.userId.profilePic ? (
-                <img src={"/upload/" + comment.userId.profilePic} alt="" />
-              ) : (
-                <img src={Avatar} alt="Default Avatar" />
-              )}
+              <img src={getImagePath(comment.userId.profilePic)} alt={comment.userId.name || "Profile"} />
               <div className="info my-auto">
                 <span className="my-auto">{comment.userId.name}</span>
                 <p>{comment.desc}</p>

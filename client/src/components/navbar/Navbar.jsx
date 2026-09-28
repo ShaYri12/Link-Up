@@ -296,19 +296,22 @@ const Navbar = () => {
                       data-bs-toggle="dropdown"
                       aria-expanded="false"
                     >
-                      {currentUser?.profilePic ? (
-                        <img
-                          src={currentUser?.profilePic}
-                          className="profileimg img-fluid rounded-circle"
-                          alt=""
-                        />
-                      ) : (
-                        <img
-                          src={Avatar}
-                          className="profileimg img-fluid rounded-circle"
-                          alt=""
-                        />
-                      )}
+                      <img
+                        src={
+                          currentUser?.profilePic
+                            ? /^https?:\/\//.test(currentUser.profilePic)
+                              ? currentUser.profilePic
+                              : currentUser.profilePic.startsWith("/upload/") ||
+                                currentUser.profilePic.startsWith("upload/")
+                              ? currentUser.profilePic.startsWith("/")
+                                ? currentUser.profilePic
+                                : `/${currentUser.profilePic}`
+                              : `/upload/${currentUser.profilePic}`
+                            : Avatar
+                        }
+                        className="profileimg img-fluid rounded-circle"
+                        alt={currentUser?.name || "Profile"}
+                      />
                     </button>
                     <ul
                       className={`dropdown-menu text-center position-absolute ${

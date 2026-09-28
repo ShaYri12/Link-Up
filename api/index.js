@@ -91,7 +91,8 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     const folder = process.env.CLOUDINARY_FOLDER || "link-up";
     const isVideo = /video\//.test(req.file.mimetype);
 
-    const result = await cloudinary.uploader.upload_stream(
+    // Create upload stream with promise
+    const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder,
         resource_type: isVideo ? "video" : "image",
@@ -99,7 +100,7 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
       (error, uploadResult) => {
         if (error) {
           console.error("Cloudinary upload error:", error);
-          return res.status(500).json({ error: "Upload failed" });
+          return res.status(500).json({ error: "Upload failed", details: error.message });
         }
         // Return the secure URL to client
         return res.status(200).json(uploadResult.secure_url);
@@ -107,12 +108,19 @@ app.post("/api/upload", upload.single("file"), async (req, res) => {
     );
 
     // Write the buffer to the upload stream
-    const stream = result;
-    stream.end(req.file.buffer);
+    uploadStream.end(req.file.buffer);
   } catch (e) {
     console.error("Upload error:", e);
-    res.status(500).json({ error: "Upload failed" });
+    res.status(500).json({ error: "Upload failed", details: e.message });
   }
+});
+
+// Health check route
+app.get("/", (req, res) => {
+  res.json({ 
+    status: "OK", 
+    message: "Link-Up API is running",
+  });
 });
 
 app.use("/api/auth", authRoutes);
@@ -133,6 +141,8 @@ server.listen(PORT, () => {
 
 // Socket.IO integration
 io.on("connection", (socket) => {
+  console.log("✅ Socket connected:", socket.id);
+  
   socket.on("setup", (userData) => {
     socket.join(userData._id);
     socket.emit("connected");
@@ -140,7 +150,7 @@ io.on("connection", (socket) => {
 
   socket.on("join chat", (room) => {
     socket.join(room);
-    console.log("User joined room: " + room);
+    console.log("👤 User joined room:", room);
   });
 
   socket.on("typing", (room) => {
@@ -164,6 +174,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("A user disconnected");
+    console.log("❌ Socket disconnected:", socket.id);
   });
 });

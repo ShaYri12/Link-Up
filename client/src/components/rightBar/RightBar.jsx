@@ -2,87 +2,95 @@ import "./rightBar.scss";
 import "bootstrap/dist/css/bootstrap.min.css";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import CloseIcon from "@mui/icons-material/Close";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { makeRequest } from "../../axios";
 import Avatar from "../../assets/avatar.jpg";
 import { Link } from "react-router-dom";
 import { AuthContext } from "../../context/authContext";
 
 const RightBar = () => {
-  const [suggestedUsers, setSuggestedUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [onlineFriends, setOnlineFriends] = useState([]); // Initialize as an empty array
-  const [onlineFriendsLoading, setOnlineFriendsLoading] = useState(true);
-  const [onlineFriendsError, setOnlineFriendsError] = useState(null);
   const { currentUser } = useContext(AuthContext);
+  const queryClient = useQueryClient();
+  const currentUserId = useMemo(() => currentUser?._id, [currentUser?._id]);
 
-  useEffect(() => {
-    const fetchOnlineFriends = async () => {
-      try {
-        const response = await makeRequest.get("/users/online-followed");
-        if (response.status !== 200) {
-          throw new Error("Failed to fetch online friends");
-        }
-        const raw = response.data;
-        const list = Array.isArray(raw) ? raw : Array.isArray(raw?.users) ? raw.users : [];
-        setOnlineFriends(list);
-        setOnlineFriendsLoading(false);
-      } catch (error) {
-        console.error(error);
-        setOnlineFriendsError("Failed to fetch online friends");
-        setOnlineFriendsLoading(false);
-      }
-    };
+  // Fetch online friends using React Query
+  const {
+    data: onlineFriendsData,
+    isLoading: onlineFriendsLoading,
+    error: onlineFriendsError,
+  } = useQuery({
+    queryKey: ["onlineFriends"],
+    queryFn: async () => {
+      const response = await makeRequest.get("/users/online-followed");
+      const raw = response.data;
+      const list = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.users)
+        ? raw.users
+        : [];
+      return list;
+    },
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    cacheTime: 300000, // Keep in cache for 5 minutes
+  });
 
-    fetchOnlineFriends();
-  }, []);
+  // Fetch suggested users using React Query
+  const {
+    data: suggestedUsersData,
+    isLoading: loading,
+    error: error,
+  } = useQuery({
+    queryKey: ["suggestedUsers", currentUserId],
+    queryFn: async () => {
+      const response = await makeRequest.get("/users/suggestion");
+      const raw = response.data;
+      const candidates = Array.isArray(raw)
+        ? raw
+        : Array.isArray(raw?.users)
+        ? raw.users
+        : [];
+      // Filter out the current user from suggested users
+      const filteredUsers = candidates.filter(
+        (user) => user?._id !== currentUserId
+      );
+      return filteredUsers;
+    },
+    enabled: !!currentUserId,
+    staleTime: 60000, // Consider data fresh for 60 seconds
+    cacheTime: 300000, // Keep in cache for 5 minutes
+  });
 
-  useEffect(() => {
-    const fetchSuggestedUsers = async () => {
-      try {
-        const response = await makeRequest.get("/users/suggestion");
-        if (response.status !== 200) {
-          throw new Error("Failed to fetch suggested users");
-        }
+  const [dismissedUsers, setDismissedUsers] = useState([]);
 
-        const raw = response.data;
-        const candidates = Array.isArray(raw) ? raw : Array.isArray(raw?.users) ? raw.users : [];
-        // Filter out the current user from suggested users
-        const filteredUsers = candidates.filter((user) => user?._id !== currentUser?._id);
-
-        setSuggestedUsers(filteredUsers);
-        setLoading(false);
-      } catch (error) {
-        console.error(error);
-        setError("Failed to fetch suggested users");
-        setLoading(false);
-      }
-    };
-
-    fetchSuggestedUsers();
-  }, [currentUser?._id]);
+  // Mutation for following a user
+  const followMutation = useMutation({
+    mutationFn: (followerId) =>
+      makeRequest.post("/relationships", { userId: followerId }),
+    onSuccess: (_, followerId) => {
+      setDismissedUsers((prev) => [...prev, followerId]);
+      // Optionally invalidate suggestions
+      // queryClient.invalidateQueries(["suggestedUsers"]);
+    },
+  });
 
   const handleFollow = async (followerId) => {
-    try {
-      const response = await makeRequest.post("/relationships", {
-        userId: followerId,
-      });
-      if (response.status !== 200) {
-        throw new Error("Failed to follow");
-      }
-      setSuggestedUsers(
-        suggestedUsers.filter((user) => user._id !== followerId)
-      );
-    } catch (error) {
-      console.error("Error toggling follow:", error);
-    }
+    followMutation.mutate(followerId);
   };
 
   const handleDismiss = (userId) => {
-    // Remove the dismissed user from suggestions
-    setSuggestedUsers(suggestedUsers.filter((user) => user._id !== userId));
+    setDismissedUsers((prev) => [...prev, userId]);
   };
+
+  // Filter out dismissed users from suggestions
+  const suggestedUsers = useMemo(() => {
+    if (!suggestedUsersData) return [];
+    return suggestedUsersData.filter(
+      (user) => !dismissedUsers.includes(user._id)
+    );
+  }, [suggestedUsersData, dismissedUsers]);
+
+  const onlineFriends = onlineFriendsData || [];
 
   return (
     <>
@@ -92,11 +100,10 @@ const RightBar = () => {
           <div className="item">
             <span>Suggestions For You</span>
             {loading && <span className="d-block pt-3">Loading...</span>}
-            {error && <span className="d-block pt-3">{error}</span>}
-            {!loading &&
-            !error &&
-            suggestedUsers &&
-            suggestedUsers.length > 0 ? (
+            {error && (
+              <span className="d-block pt-3">Failed to fetch suggestions</span>
+            )}
+            {!loading && !error && suggestedUsers && suggestedUsers.length > 0 ? (
               suggestedUsers.map((user) => (
                 <div className="user" key={user._id}>
                   <Link to={`/profile/${user._id}`} className="userInfo">
@@ -104,11 +111,14 @@ const RightBar = () => {
                       className="img-fluid"
                       src={
                         user.profilePic
-                          ? (/^https?:\/\//.test(user.profilePic)
+                          ? /^https?:\/\//.test(user.profilePic)
+                            ? user.profilePic
+                            : user.profilePic.startsWith("/upload/") ||
+                              user.profilePic.startsWith("upload/")
+                            ? user.profilePic.startsWith("/")
                               ? user.profilePic
-                              : (user.profilePic.startsWith("/upload/") || user.profilePic.startsWith("upload/"))
-                                ? (user.profilePic.startsWith("/") ? user.profilePic : `/${user.profilePic}`)
-                                : `/upload/${user.profilePic}`)
+                              : `/${user.profilePic}`
+                            : `/upload/${user.profilePic}`
                           : Avatar
                       }
                       alt={user.username}
@@ -120,6 +130,7 @@ const RightBar = () => {
                       className="btn btn-follow"
                       type="button"
                       onClick={() => handleFollow(user._id)}
+                      disabled={followMutation.isLoading}
                     >
                       <PersonAddIcon />
                     </button>
@@ -134,7 +145,9 @@ const RightBar = () => {
                 </div>
               ))
             ) : (
-              <span className="d-block pt-3">No suggestions available</span>
+              !loading && (
+                <span className="d-block pt-3">No suggestions available</span>
+              )
             )}
           </div>
 
@@ -144,7 +157,7 @@ const RightBar = () => {
               <span className="d-block pt-3">Loading...</span>
             )}
             {onlineFriendsError && (
-              <span className="d-block pt-3">{onlineFriendsError}</span>
+              <span className="d-block pt-3">Failed to fetch online friends</span>
             )}
             {!onlineFriendsLoading &&
             !onlineFriendsError &&
@@ -157,11 +170,14 @@ const RightBar = () => {
                       className="img-fluid"
                       src={
                         friend.profilePic
-                          ? (/^https?:\/\//.test(friend.profilePic)
+                          ? /^https?:\/\//.test(friend.profilePic)
+                            ? friend.profilePic
+                            : friend.profilePic.startsWith("/upload/") ||
+                              friend.profilePic.startsWith("upload/")
+                            ? friend.profilePic.startsWith("/")
                               ? friend.profilePic
-                              : (friend.profilePic.startsWith("/upload/") || friend.profilePic.startsWith("upload/"))
-                                ? (friend.profilePic.startsWith("/") ? friend.profilePic : `/${friend.profilePic}`)
-                                : `/upload/${friend.profilePic}`)
+                              : `/${friend.profilePic}`
+                            : `/upload/${friend.profilePic}`
                           : Avatar
                       }
                       alt={friend.username}
@@ -172,7 +188,11 @@ const RightBar = () => {
                 </div>
               ))
             ) : (
-              <span className="d-block pt-3">No online friends available</span>
+              !onlineFriendsLoading && (
+                <span className="d-block pt-3">
+                  No online friends available
+                </span>
+              )
             )}
           </div>
         </div>

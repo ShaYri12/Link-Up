@@ -69,6 +69,7 @@
 
       .content {
         margin: 20px 0px;
+        padding: 0 !important;
 
         .media {
           width: 100%;
@@ -80,8 +81,8 @@
 
       .info {
         display: flex;
-        align-items: center;
-        gap: 20px;
+        align-items: flex-start !important;
+        gap: 2px !important;
 
         .item {
           display: flex;

@@ -1,18 +1,19 @@
 import { Box } from "@chakra-ui/layout";
-import { useState } from "react";
 import Chatbox from "../../components/Chatbox";
 import MyChats from "../../components/MyChats";
 import SideDrawer from "../../components/miscellaneous/SideDrawer";
 import { ChatState } from "../../context/ChatProvider";
-import Navbar from "../../components/ChatNav/Navbar";
+import Navbar from "../../components/navbar/Navbar";
+import { useContext } from "react";
+import { DarkModeContext } from "../../context/darkModeContext";
 import "./chat.scss";
 
 const Chatpage = () => {
-  const [fetchAgain, setFetchAgain] = useState(false);
   const { user } = ChatState();
+  const { darkMode } = useContext(DarkModeContext);
 
   return (
-    <div className="w-100 vh-100 bg-slate-300 " style={{ width: "100%" }}>
+    <div className={`theme-${darkMode ? "dark" : "light"} w-100 vh-100 bg-slate-300`} style={{ width: "100%" }}>
       <Navbar />
       {user && (
         <SideDrawer

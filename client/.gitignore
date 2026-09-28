@@ -1,8 +1,20 @@
-# React build
-/build
+# Dependencies
+node_modules
+
+# Vite build
+dist
+build
+
+# Vite cache
+.vite
 
 # Env files
 .env
 .env.*
+!.env.example
+
+# IDE
+.vscode
+.idea
 
 .vercel

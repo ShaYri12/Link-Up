@@ -28,7 +28,8 @@
           input {
             border: none;
             outline: none;
-            padding: 20px 10px;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
             background-color: transparent;
             width: 100%;
             color: themed("textColor");
@@ -43,6 +44,7 @@
             height: 100px;
             object-fit: cover;
             border-radius: 0px;
+            margin-left: auto;
           }
         }
       }

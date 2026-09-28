@@ -1,6 +1,6 @@
 import React, { useContext } from "react";
-import { ReactComponent as Sun } from "../../assets/images/Sun.svg";
-import { ReactComponent as Moon } from "../../assets/images/Moon.svg";
+import Sun from "../../assets/images/Sun.svg?react";
+import Moon from "../../assets/images/Moon.svg?react";
 import "./DarkMode.css";
 import { DarkModeContext } from "../../context/darkModeContext";
 

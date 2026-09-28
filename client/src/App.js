@@ -28,12 +28,13 @@ import SearchResult from "./pages/searchResult/SearchResult";
 import { makeRequest } from "./axios";
 // import Message from "./pages/message/Message";
 
+// Create QueryClient outside component to prevent recreation on re-renders
+const queryClient = new QueryClient();
+
 function App() {
   const { currentUser } = useContext(AuthContext);
 
   const { darkMode } = useContext(DarkModeContext);
-
-  const queryClient = new QueryClient();
 
   useEffect(() => {
     if (darkMode === true) {

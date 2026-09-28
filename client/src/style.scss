@@ -60,4 +60,18 @@ $themes: (
 
 *{
   font-family: "Poppins", sans-serif !important;
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+// Smooth theme transitions
+.theme-light,
+.theme-dark {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// Global smooth transitions for themed elements
+[class*="theme-"] {
+  * {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  }
 }

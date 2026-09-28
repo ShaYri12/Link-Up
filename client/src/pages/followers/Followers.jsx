@@ -84,10 +84,17 @@ const Followers = () => {
       className="img-fluid rounded-circle profile-img"
       src={
         follower.followerUserId.profilePic
-          ? "/upload/" + follower.followerUserId.profilePic
+          ? /^https?:\/\//.test(follower.followerUserId.profilePic)
+            ? follower.followerUserId.profilePic
+            : follower.followerUserId.profilePic.startsWith("/upload/") ||
+              follower.followerUserId.profilePic.startsWith("upload/")
+            ? follower.followerUserId.profilePic.startsWith("/")
+              ? follower.followerUserId.profilePic
+              : `/${follower.followerUserId.profilePic}`
+            : `/upload/${follower.followerUserId.profilePic}`
           : Avatar
       }
-      alt=""
+      alt={follower.followerUserId.name || "User"}
     />
     {follower.followerUserId.online === 1 && <div className="online" />}
     <h5 className="my-auto">{follower.followerUserId.name}</h5>

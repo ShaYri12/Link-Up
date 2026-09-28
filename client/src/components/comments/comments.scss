@@ -22,6 +22,12 @@
         border: 1px solid themed("border");
         background-color: transparent;
         color: themed("textColor");
+        text-align: left;
+        border-radius: 5px;
+        
+        &::placeholder {
+          text-align: left;
+        }
       }
 
       button{
@@ -58,7 +64,7 @@
 
       .date{
         flex:1;
-        align-self: center;
+        text-align: right;
         color: gray;
         font-size: 12px;
       }

@@ -1,12 +1,10 @@
 import "./JobPost.scss";
-import { useContext, useState, useRef, useEffect } from "react"; // Import useRef
-import axios from "axios";
+import { useContext, useState, useRef } from "react"; // Import useRef
 import { toast } from "react-toastify";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { makeRequest } from "../../axios";
 import CancelIcon from "@mui/icons-material/Cancel";
 import { DarkModeContext } from "../../context/darkModeContext";
-import { duration } from "moment";
 import Image from "../../assets/img.png";
 import Video from "../../assets/9.png";
 

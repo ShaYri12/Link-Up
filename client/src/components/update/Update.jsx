@@ -3,10 +3,14 @@ import { makeRequest } from "../../axios";
 import "./update.scss";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import CloseIcon from "@mui/icons-material/Close";
+import { toast } from "react-toastify";
 
 const Update = ({ setOpenUpdate, user }) => {
   const [cover, setCover] = useState(null);
   const [profile, setProfile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [overallProgress, setOverallProgress] = useState(0);
   const [texts, setTexts] = useState({
     email: user.email,
     password: user.password,
@@ -15,15 +19,49 @@ const Update = ({ setOpenUpdate, user }) => {
     website: user.website,
   });
 
-  const upload = async (file) => {
+  // File size limit: 5MB
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+  const validateFileSize = (file) => {
+    if (file && file.size > MAX_FILE_SIZE) {
+      toast.error(`File ${file.name} is too large. Maximum size is 5MB.`);
+      return false;
+    }
+    return true;
+  };
+
+  const upload = async (file, type) => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await makeRequest.post("/upload", formData);
-      return res.data; // secure url
+      
+      const config = {
+        onUploadProgress: (progressEvent) => {
+          const progress = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          // Calculate overall progress based on which files are being uploaded
+          const totalFiles = (cover ? 1 : 0) + (profile ? 1 : 0);
+          const baseProgress = type === "cover" ? 0 : 50;
+          const fileProgress = progress / totalFiles;
+          setOverallProgress(Math.round(baseProgress + fileProgress));
+        },
+        timeout: 60000, // 60 seconds timeout
+      };
+
+      const res = await makeRequest.post("/upload", formData, config);
+      return res.data;
     } catch (err) {
-      console.log(err);
-      throw err;
+      console.error("Upload error:", err);
+      if (err.code === "ECONNABORTED") {
+        throw new Error("Upload timeout. Please try with a smaller file.");
+      } else if (err.response?.status === 413) {
+        throw new Error("File is too large. Please use a smaller image (max 5MB).");
+      } else if (err.message === "Network Error") {
+        throw new Error("Network error. Please check your connection and try again.");
+      } else {
+        throw new Error("Failed to upload file. Please try again.");
+      }
     }
   };
 
@@ -31,16 +69,42 @@ const Update = ({ setOpenUpdate, user }) => {
     setTexts((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const handleCoverChange = (e) => {
+    const file = e.target.files[0];
+    if (file && validateFileSize(file)) {
+      setCover(file);
+    } else {
+      e.target.value = null;
+    }
+  };
+
+  const handleProfileChange = (e) => {
+    const file = e.target.files[0];
+    if (file && validateFileSize(file)) {
+      setProfile(file);
+    } else {
+      e.target.value = null;
+    }
+  };
+
   const queryClient = useQueryClient();
 
   const mutation = useMutation(
-    (texts) => {
-      return makeRequest.put("/users", texts);
+    (userData) => {
+      return makeRequest.put("/users", userData);
     },
     {
       onSuccess: () => {
-        // Invalidate and refetch
         queryClient.invalidateQueries(["user"]);
+        toast.success("Profile updated successfully!");
+        setOpenUpdate(false);
+        setCover(null);
+        setProfile(null);
+        setOverallProgress(0);
+      },
+      onError: (error) => {
+        console.error("Update error:", error);
+        toast.error("Failed to update profile. Please try again.");
       },
     }
   );
@@ -48,29 +112,64 @@ const Update = ({ setOpenUpdate, user }) => {
   const handleClick = async (e) => {
     e.preventDefault();
 
-    // TODO: find a better way to get image URL
+    if (uploading) return; // Prevent double submission
 
-    let coverUrl;
-    let profileUrl;
-    coverUrl = cover ? await upload(cover) : user.coverPic;
-    profileUrl = profile ? await upload(profile) : user.profilePic;
+    try {
+      setUploading(true);
+      setOverallProgress(0);
 
-    const updatedUserData = {
-      ...texts,
-      coverPic: coverUrl,
-      profilePic: profileUrl,
-    };
+      let coverUrl = user.coverPic;
+      let profileUrl = user.profilePic;
 
-    mutation.mutate(updatedUserData);
-    setOpenUpdate(false);
-    setCover(null);
-    setProfile(null);
+      // Upload cover picture if changed
+      if (cover) {
+        try {
+          coverUrl = await upload(cover, "cover");
+        } catch (error) {
+          console.error("Cover upload error:", error);
+          toast.error(error.message);
+          setUploading(false);
+          setOverallProgress(0);
+          return;
+        }
+      }
 
-    // Update local storage user data
-    const localStorageUser = JSON.parse(localStorage.getItem("user")) || {};
-    const updatedLocalStorageUser = { ...localStorageUser, ...updatedUserData };
-    localStorage.setItem("user", JSON.stringify(updatedLocalStorageUser));
-    // window.location.reload();
+      // Upload profile picture if changed
+      if (profile) {
+        try {
+          profileUrl = await upload(profile, "profile");
+        } catch (error) {
+          console.error("Profile upload error:", error);
+          toast.error(error.message);
+          setUploading(false);
+          setOverallProgress(0);
+          return;
+        }
+      }
+
+      // Update progress to 100% before saving
+      setOverallProgress(100);
+
+      // Update user data
+      const updatedUserData = {
+        ...texts,
+        coverPic: coverUrl,
+        profilePic: profileUrl,
+      };
+
+      // Update local storage
+      const localStorageUser = JSON.parse(localStorage.getItem("user")) || {};
+      const updatedLocalStorageUser = { ...localStorageUser, ...updatedUserData };
+      localStorage.setItem("user", JSON.stringify(updatedLocalStorageUser));
+
+      // Trigger mutation
+      mutation.mutate(updatedUserData);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast.error("An unexpected error occurred. Please try again.");
+      setUploading(false);
+      setOverallProgress(0);
+    }
   };
 
   return (
@@ -86,9 +185,9 @@ const Update = ({ setOpenUpdate, user }) => {
                   src={
                     cover
                       ? URL.createObjectURL(cover)
-                      : user.coverPic
+                      : user.coverPic || "https://via.placeholder.com/300x100?text=Cover+Picture"
                   }
-                  alt=""
+                  alt="Cover"
                 />
                 <CloudUploadIcon className="icon" />
               </div>
@@ -97,7 +196,9 @@ const Update = ({ setOpenUpdate, user }) => {
               type="file"
               id="cover"
               style={{ display: "none" }}
-              onChange={(e) => setCover(e.target.files[0])}
+              onChange={handleCoverChange}
+              accept="image/*"
+              disabled={uploading}
             />
             <label htmlFor="profile">
               <span>Profile Picture</span>
@@ -106,9 +207,9 @@ const Update = ({ setOpenUpdate, user }) => {
                   src={
                     profile
                       ? URL.createObjectURL(profile)
-                      : user.profilePic
+                      : user.profilePic || "https://via.placeholder.com/100?text=Profile"
                   }
-                  alt=""
+                  alt="Profile"
                 />
                 <CloudUploadIcon className="icon" />
               </div>
@@ -117,22 +218,27 @@ const Update = ({ setOpenUpdate, user }) => {
               type="file"
               id="profile"
               style={{ display: "none" }}
-              onChange={(e) => setProfile(e.target.files[0])}
+              onChange={handleProfileChange}
+              accept="image/*"
+              disabled={uploading}
             />
           </div>
           <label>Email</label>
           <input
-            type="text"
+            type="email"
             value={texts.email}
             name="email"
             onChange={handleChange}
+            disabled={uploading}
           />
           <label>Password</label>
           <input
-            type="text"
+            type="password"
             value={texts.password}
             name="password"
             onChange={handleChange}
+            disabled={uploading}
+            placeholder="Leave blank to keep current password"
           />
           <label>Name</label>
           <input
@@ -140,6 +246,7 @@ const Update = ({ setOpenUpdate, user }) => {
             value={texts.name}
             name="name"
             onChange={handleChange}
+            disabled={uploading}
           />
           <label>Country / City</label>
           <input
@@ -147,21 +254,39 @@ const Update = ({ setOpenUpdate, user }) => {
             name="city"
             value={texts.city}
             onChange={handleChange}
+            disabled={uploading}
           />
           <label>Website</label>
           <input
-            type="text"
+            type="url"
             name="website"
             value={texts.website}
             onChange={handleChange}
+            disabled={uploading}
           />
-          <button onClick={handleClick}>Update</button>
+          <button 
+            onClick={handleClick}
+            disabled={uploading || mutation.isLoading}
+            className={uploading || mutation.isLoading ? "updating" : ""}
+          >
+            {uploading || mutation.isLoading ? (
+              <>
+                <span className="spinner"></span>
+                {overallProgress > 0 && overallProgress < 100 
+                  ? `Uploading... ${overallProgress}%` 
+                  : "Saving..."}
+              </>
+            ) : (
+              "Update"
+            )}
+          </button>
         </form>
         <button
           className="close btn btn-danger"
           onClick={() => setOpenUpdate(false)}
+          disabled={uploading || mutation.isLoading}
         >
-          close
+          <CloseIcon />
         </button>
       </div>
     </div>

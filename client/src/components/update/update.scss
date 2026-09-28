@@ -26,6 +26,7 @@
       -webkit-box-shadow: 0px 0px 15px 1px rgba(0, 0, 0, 0.09);
       -moz-box-shadow: 0px 0px 15px 1px rgba(0, 0, 0, 0.09);
       box-shadow: 0px 0px 15px 1px rgba(0, 0, 0, 0.09);
+      border-radius: 8px;
       position: relative;
       overflow-y: auto;
       
@@ -89,6 +90,11 @@
           border-bottom: 1px solid themed("border");
           color: gray;
           background-color: transparent;
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
         }
 
         button {
@@ -97,6 +103,40 @@
           cursor: pointer;
           color: white;
           background-color: #5271ff;
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          transition: background-color 0.3s ease;
+
+          &:hover:not(:disabled) {
+            background-color: #3d5acc;
+          }
+
+          &:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+          }
+
+          &.updating {
+            background-color: #6c757d;
+          }
+
+          .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffffff;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+          }
+
+          @keyframes spin {
+            to {
+              transform: rotate(360deg);
+            }
+          }
         }
       }
 
@@ -106,9 +146,15 @@
         right: 20px;
         border: none;
         background-color: #f0544f;
-        padding: 5px;
+        padding: 4px;
         cursor: pointer;
         color: white;
+        border-radius: 50%;
+
+        &:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
       }
     }
   }

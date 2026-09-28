@@ -63,10 +63,17 @@ const Followings = () => {
               className="img-fluid rounded-circle profile-img"
               src={
                 following?.followedUserId?.profilePic
-                  ? "/upload/" + following?.followedUserId?.profilePic
+                  ? /^https?:\/\//.test(following.followedUserId.profilePic)
+                    ? following.followedUserId.profilePic
+                    : following.followedUserId.profilePic.startsWith("/upload/") ||
+                      following.followedUserId.profilePic.startsWith("upload/")
+                    ? following.followedUserId.profilePic.startsWith("/")
+                      ? following.followedUserId.profilePic
+                      : `/${following.followedUserId.profilePic}`
+                    : `/upload/${following.followedUserId.profilePic}`
                   : Avatar
               }
-              alt=""
+              alt={following?.followedUserId?.name || "User"}
             />
             {following?.followedUserId?.online === 1 && (
               <div className="online" />

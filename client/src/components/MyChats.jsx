@@ -85,13 +85,14 @@ const MyChats = ({ fetchAgain }) => {
               <Box
                 onClick={() => setSelectedChat(chat)}
                 className={
-                  "chat-lists cursor-pointer px-3 py-0 rounded" +
+                  "chat-lists px-3 py-0 rounded" +
                   (selectedChat === chat ? " bg-primary text-white" : "")
                 }
                 style={{
                   ...(selectedChat !== chat && {
                     backgroundColor: "lightgray",
                     color: "black",
+                    cursor: "pointer"
                   }),
                 }}
                 key={chat._id}

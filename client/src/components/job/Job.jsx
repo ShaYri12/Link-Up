@@ -1,8 +1,4 @@
 import "./job.scss";
-import FavoriteBorderOutlinedIcon from "@mui/icons-material/FavoriteBorderOutlined";
-import FavoriteOutlinedIcon from "@mui/icons-material/FavoriteOutlined";
-import TextsmsOutlinedIcon from "@mui/icons-material/TextsmsOutlined";
-import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import BusinessIcon from "@mui/icons-material/Business";
 import PeopleIcon from "@mui/icons-material/People";
 import ThumbUpIcon from "@mui/icons-material/ThumbUp";
@@ -10,8 +6,7 @@ import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import { Link } from "react-router-dom";
-import Comments from "../comments/Comments";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import moment from "moment";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { makeRequest } from "../../axios";
@@ -21,7 +16,7 @@ import Avatar from "../../assets/avatar.jpg";
 import { toast } from "react-toastify";
 import Modal from "../modal/Modal";
 import CloseIcon from "@mui/icons-material/Close";
-import sad from "../../assets/images/panda";
+import sad from "../../assets/images/panda.gif";
 import { DarkModeContext } from "../../context/darkModeContext";
 import { ChatState } from "../../context/ChatProvider";
 import TelegramIcon from "@mui/icons-material/Telegram";
@@ -192,11 +187,21 @@ const Job = ({ job }) => {
       <div className="container">
         <div className="user">
           <div className="userInfo">
-            {job.userId.profilePic ? (
-              <img src={"/upload/" + job.userId.profilePic} alt="" />
-            ) : (
-              <img src={Avatar} alt="Default Avatar" />
-            )}
+            <img 
+              src={
+                job.userId.profilePic
+                  ? /^https?:\/\//.test(job.userId.profilePic)
+                    ? job.userId.profilePic
+                    : job.userId.profilePic.startsWith("/upload/") ||
+                      job.userId.profilePic.startsWith("upload/")
+                    ? job.userId.profilePic.startsWith("/")
+                      ? job.userId.profilePic
+                      : `/${job.userId.profilePic}`
+                    : `/upload/${job.userId.profilePic}`
+                  : Avatar
+              }
+              alt={job.userId.name || "User Avatar"}
+            />
             <div className="details">
               <Link
                 to={`/profile/${job.userId._id}`}
@@ -230,10 +235,6 @@ const Job = ({ job }) => {
                       </button>
                     </>
                   )}
-
-                  {/* <button className="btn" onClick={handleDelete}>
-          delete
-        </button> */}
                 </>
               )}
             </>
